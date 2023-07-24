@@ -8,7 +8,7 @@ from typing import Union, Callable, Optional
 UnionOfTypes = Union[str, bytes, int, float]
 
 
-class Caches:
+class Cache:
     """ Class for methods that operate a caching system """
 
     def _init_(self):
