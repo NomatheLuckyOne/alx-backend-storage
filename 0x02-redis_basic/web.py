@@ -1,38 +1,22 @@
 #!/usr/bin/env python3
-'''A module with tools for request caching and tracking
-'''
+'''A module with tools for request caching and tracking'''
 import redis
 import requests
-from functools import wraps
-from typing import Callable
+r = redis.Redis()
+count = 0
 
 
-redis_store = redis.Redis()
-'''The module-level Redis instance
-'''
-
-
-def data_cacher(method: Callable) -> Callable:
-    '''Caches the output of fetched data
-    '''
-    @wraps(method)
-    def invoker(url) -> str:
-        '''The wrapper function for caching the output
-        '''
-        redis_store.incr(f'count:{url}')
-        result = redis_store.get(f'result:{url}')
-        if result:
-            return result.decode('utf-8')
-        result = method(url)
-        redis_store.set(f'count:{url}', 0)
-        redis_store.setex(f'result:{url}', 10, result)
-        return result
-    return invoker
-
-
-@data_cacher
 def get_page(url: str) -> str:
-    '''Returns the contentof a URL after caching the request's response,
-    and tracking the request
-    '''
-    return requests.get(url).text
+    """track howmany times a particular URL was accessed in the key
+        "count:{url}"
+        and cache the resultwith an experation time of 10 seconds"""
+
+    r.set(f"cached:{url}", count)
+    resp = requests.get(url)
+    r.incr(f"count:{url}")
+    r.setex(f"cached:{url}", 10, r.get(f"cached:{url}"))
+    return resp.text
+
+
+if _name == "_main_":
+    get_page('http://slowly.robertomurray.co.uk')
